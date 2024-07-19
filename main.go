@@ -43,6 +43,7 @@ func main() {
 	BooksService := books.BooksService{MongoCollection: collection}
 	router.HandleFunc(libraryAPT+"/books", BooksService.GetAllBooks).Methods(http.MethodGet)
 	router.HandleFunc(libraryAPT+"/books/{name}", BooksService.GetBookByName).Methods(http.MethodPost)
+	router.HandleFunc(libraryAPT+"/books/{name}", BooksService.UpdateBookByName).Methods(http.MethodPut)
 
 	log.Printf("Server running on port %s ...", os.Getenv("PORT"))
 	if err := http.ListenAndServe(":"+os.Getenv("PORT"), router); err != nil {

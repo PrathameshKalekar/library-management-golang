@@ -8,6 +8,7 @@ import (
 	"github.com/PrathameshKalekar/library-management/models"
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -69,4 +70,37 @@ func (books *BooksService) GetBookByName(w http.ResponseWriter, r *http.Request)
 	response.Status = true
 	response.Data = book
 	json.NewEncoder(w).Encode(response)
+}
+
+func (books *BooksService) UpdateBookByName(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	name := vars["name"]
+
+	var requestBody models.Book
+
+	json.NewDecoder(r.Body).Decode(&requestBody)
+	var update primitive.M
+	if requestBody.Auther != "" {
+		update = bson.M{
+			"$set": bson.M{
+				"auther":       requestBody.Auther,
+				"is_available": requestBody.IsAvailable,
+			},
+		}
+	} else {
+		update = bson.M{
+			"$set": bson.M{
+				"is_available": requestBody.IsAvailable,
+			},
+		}
+	}
+	_, err := books.MongoCollection.UpdateOne(context.Background(), bson.M{"name": name}, update)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		json.NewEncoder(w).Encode(ResponseJSON{Message: "Unable to Update", Status: false})
+		return
+	}
+	w.Header().Set("Content-Type", "Application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(ResponseJSON{Message: "Updated success", Status: true})
 }
