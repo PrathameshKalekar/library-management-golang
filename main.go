@@ -28,7 +28,7 @@ func init() {
 		log.Println("Database connected ")
 	}
 
-	if err = MongoClient.Database(os.Getenv("DATABASE_NAME")).RunCommand(context.TODO(), bson.D{{"ping", 0}}).Err(); err != nil {
+	if err = MongoClient.Database(os.Getenv("DATABASE_NAME")).RunCommand(context.TODO(), bson.D{{"ping", 1}}).Err(); err != nil {
 		log.Fatal("ERROR connecting databse ")
 	}
 	log.Println("Ping Success")
@@ -37,10 +37,12 @@ func init() {
 func main() {
 	defer MongoClient.Disconnect(context.Background())
 	router := mux.NewRouter()
+	libraryAPT := "/api/library"
 	collection := MongoClient.Database(os.Getenv("DATABASE_NAME")).Collection(os.Getenv("COLLECTION_BOOK"))
 
 	BooksService := books.BooksService{MongoCollection: collection}
-	router.HandleFunc("/api/library/books", BooksService.GetAllBooks).Methods(http.MethodGet)
+	router.HandleFunc(libraryAPT+"/books", BooksService.GetAllBooks).Methods(http.MethodGet)
+	router.HandleFunc(libraryAPT+"/books/{name}", BooksService.GetBookByName).Methods(http.MethodPost)
 
 	log.Printf("Server running on port %s ...", os.Getenv("PORT"))
 	if err := http.ListenAndServe(":"+os.Getenv("PORT"), router); err != nil {

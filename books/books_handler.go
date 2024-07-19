@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/PrathameshKalekar/library-management/models"
+	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -44,4 +45,28 @@ func (books *BooksService) GetAllBooks(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+func (books *BooksService) GetBookByName(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	name := vars["name"]
+	var book models.Book
+	var response ResponseJSON
+	err := books.MongoCollection.FindOne(context.Background(), bson.M{"name": name}).Decode(&book)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			w.WriteHeader(http.StatusNotFound)
+			response.Message = "No Book Found"
+			response.Status = false
+			json.NewEncoder(w).Encode(response)
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+		response.Message = "Error retriving data"
+		response.Status = false
+	}
+	w.WriteHeader(http.StatusOK)
+	response.Message = "Book Found"
+	response.Status = true
+	response.Data = book
+	json.NewEncoder(w).Encode(response)
 }
